@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: .
+    image: intelligent-search-agent-api:local
+    container_name: intelligent-search-agent-api
+    environment:
+      ENVIRONMENT: local
+      LOG_LEVEL: INFO
+      API_TITLE: Intelligent Search Agent
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: intelligent_search_agent
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      VISION_MODEL: ${VISION_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      LLM_RERANK_ENABLED: ${LLM_RERANK_ENABLED:-true}
+      LLM_RERANK_TOP_K: ${LLM_RERANK_TOP_K:-12}
+      PERSIST_CHAT_SESSIONS: ${PERSIST_CHAT_SESSIONS:-true}
+      ENABLE_ADMIN_API: ${ENABLE_ADMIN_API:-true}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      ALLOWED_SOURCE_URL_HOSTS: ${ALLOWED_SOURCE_URL_HOSTS:-commons.wikimedia.org,upload.wikimedia.org,journalbelgianhistory.be,www.journalbelgianhistory.be}
+      ASSET_STORAGE_BACKEND: local
+      ASSET_ROOT: /app/storage/assets
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: intelligent-search-agent-db
+    environment:
+      POSTGRES_DB: intelligent_search_agent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d intelligent_search_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

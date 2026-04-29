@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local downloaded corpora
+storage/assets/images/**
+storage/assets/pdfs/**
+storage/manifests/**
+!storage/assets/.gitkeep
+!storage/assets/images/.gitkeep
+!storage/assets/pdfs/.gitkeep
+!storage/manifests/.gitkeep

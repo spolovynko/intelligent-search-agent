@@ -1,0 +1,12 @@
+{"prompt":"Show me images of the Belgian Revolution","expected_mode":"asset_table","expected_assets":true,"expected_documents":false}
+{"prompt":"Find maps or visuals related to Antwerp history","expected_mode":"asset_table","expected_assets":true,"expected_documents":false}
+{"prompt":"What happened during the Belgian Revolution?","expected_mode":"chat","expected_assets":false,"expected_documents":true,"expected_document_open_url":true,"answer_contains_any":["independence","1830","Belgian"]}
+{"prompt":"What sources discuss Belgian patriotism in 1830?","expected_mode":"chat","expected_assets":false,"expected_documents":true,"expected_document_open_url":true}
+{"prompt":"Explain the Belgian Revolution and show related images","expected_mode":"mixed","expected_assets":true,"expected_documents":true,"expected_document_open_url":true}
+{"prompt":"Show paintings connected to Belgian independence","expected_mode":"asset_table","expected_assets":true,"expected_documents":false,"expected_first_asset_kind":"painting"}
+{"prompt":"Give me a short summary of Antwerp in Belgian history","expected_mode":"chat","expected_assets":false,"expected_documents":true}
+{"prompt":"Find images and sources about Belgian patriotism in 1830","expected_mode":"mixed","expected_assets":true,"expected_documents":true}
+{"prompt":"Hello, what can you do?","expected_mode":"chat","expected_assets":false,"expected_documents":false}
+{"prompt":"Can you show what happened during the Belgian Revolution?","expected_mode":"chat","expected_assets":false,"expected_documents":true}
+{"prompt":"Only paintings","messages":[{"role":"user","content":"Show me images of the Belgian Revolution"},{"role":"assistant","content":"I found image matches related to the Belgian Revolution."}],"expected_mode":"asset_table","expected_assets":true,"expected_documents":false,"expected_first_asset_kind":"painting","expected_memory_used":true}
+{"prompt":"Show sources too","messages":[{"role":"user","content":"Show me images of the Belgian Revolution"},{"role":"assistant","content":"I found image matches related to the Belgian Revolution."}],"expected_mode":"mixed","expected_assets":true,"expected_documents":true,"expected_document_open_url":true,"expected_memory_used":true}

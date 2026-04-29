@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Intelligent Search Agent</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Intelligent Search Agent</h1>
+          <p id="statusText">Assistant over image assets and Belgian history PDFs</p>
+        </div>
+        <nav>
+          <button id="newChatButton" type="button" data-testid="new-chat">New chat</button>
+          <a href="/docs">API Docs</a>
+          <a href="/health">Health</a>
+        </nav>
+      </header>
+
+      <section id="workspace" class="workspace chat-only">
+        <section class="chat-panel" aria-label="Assistant chat" data-testid="chat-panel">
+          <div id="messages" class="messages">
+            <article class="message assistant">
+              <div class="avatar">AI</div>
+              <div class="message-content">
+                <div class="bubble">
+                  What should we look up in the Belgian corpus?
+                </div>
+                <div class="source-citations" hidden></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="examples" aria-label="Example prompts">
+            <button type="button" data-prompt="Show me images of the Belgian Revolution">
+              Belgian Revolution images
+            </button>
+            <button type="button" data-prompt="Find maps or visuals related to Antwerp history">
+              Antwerp visuals
+            </button>
+            <button type="button" data-prompt="What sources discuss Belgian patriotism in 1830?">
+              1830 sources
+            </button>
+            <button type="button" data-prompt="Explain the Belgian Revolution and show related images">
+              Mixed answer
+            </button>
+          </div>
+
+          <form id="chatForm" class="composer">
+            <textarea
+              id="questionInput"
+              data-testid="question-input"
+              rows="2"
+              aria-label="Ask the assistant"
+              placeholder="Ask for images, PDF evidence, or historical context"
+            >Show me images of the Belgian Revolution</textarea>
+            <button id="sendButton" type="submit" data-testid="send-button">Ask</button>
+          </form>
+        </section>
+
+        <aside id="findingsPanel" class="findings-panel" aria-label="Retrieved findings" data-testid="findings-panel">
+          <div class="findings-header">
+            <div>
+              <h2 id="findingsTitle">Findings</h2>
+              <p id="findingsMeta">No query yet</p>
+            </div>
+            <span id="findingCount" class="count-pill">0</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Preview</th>
+                  <th>Ref</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Period</th>
+                  <th>Score</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="findingsBody">
+                <tr>
+                  <td colspan="7" class="empty-cell">Ask something to retrieve findings.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <section id="findingDetail" class="finding-detail">
+            <h3>Selected Finding</h3>
+            <p>Select a table row to inspect the VLM description or PDF snippet.</p>
+          </section>
+        </aside>
+      </section>
+
+      <dialog id="imageModal" class="image-modal" aria-labelledby="modalTitle">
+        <div class="modal-shell">
+          <header class="modal-header">
+            <div>
+              <h2 id="modalTitle">Image Preview</h2>
+              <div id="modalMeta" class="metadata-line"></div>
+            </div>
+            <button type="button" class="icon-button" data-modal-close aria-label="Close preview">Close</button>
+          </header>
+          <div class="modal-body">
+            <img id="modalImage" alt="" />
+            <p id="modalDescription"></p>
+          </div>
+          <footer class="modal-actions">
+            <button id="modalPrev" type="button">Previous</button>
+            <button id="modalNext" type="button">Next</button>
+            <a id="modalOpenLink" href="#" target="_blank" rel="noreferrer">Open image</a>
+            <a id="modalSourceLink" href="#" target="_blank" rel="noreferrer">Source</a>
+          </footer>
+        </div>
+      </dialog>
+
+      <dialog id="documentModal" class="document-modal" aria-labelledby="documentModalTitle">
+        <div class="document-shell">
+          <header class="modal-header">
+            <div>
+              <h2 id="documentModalTitle">Source Preview</h2>
+              <div id="documentModalMeta" class="metadata-line"></div>
+            </div>
+            <button type="button" class="icon-button" data-document-close aria-label="Close source preview">Close</button>
+          </header>
+          <div class="document-body">
+            <iframe id="documentFrame" title="PDF source preview"></iframe>
+            <aside class="document-excerpt">
+              <h3>Retrieved Excerpt</h3>
+              <p id="documentExcerpt"></p>
+            </aside>
+          </div>
+          <footer class="modal-actions">
+            <a id="documentOpenLink" href="#" target="_blank" rel="noreferrer">Open PDF page</a>
+            <a id="documentSourceLink" href="#" target="_blank" rel="noreferrer">Original source</a>
+          </footer>
+        </div>
+      </dialog>
+    </main>
+
+    <script src="/static/app.js" type="module"></script>
+  </body>
+</html>
