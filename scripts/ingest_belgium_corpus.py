@@ -28,10 +28,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pdf-limit", type=int, default=None)
     parser.add_argument("--skip-images", action="store_true")
     parser.add_argument("--skip-pdfs", action="store_true")
-    parser.add_argument("--dry-run", action="store_true", help="Inspect local files/chunks without OpenAI or DB writes.")
-    parser.add_argument("--force", action="store_true", help="Refresh rows even when they already exist.")
-    parser.add_argument("--refresh-vlm", action="store_true", help="Ignore cached VLM entries and call the VLM again.")
-    parser.add_argument("--apply-schema", action="store_true", help="Run sql/schema.sql before inserting.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Inspect local files/chunks without OpenAI or DB writes.",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Refresh rows even when they already exist."
+    )
+    parser.add_argument(
+        "--refresh-vlm",
+        action="store_true",
+        help="Ignore cached VLM entries and call the VLM again.",
+    )
+    parser.add_argument(
+        "--apply-schema", action="store_true", help="Run sql/schema.sql before inserting."
+    )
     parser.add_argument("--chunk-chars", type=int, default=4000)
     parser.add_argument("--chunk-overlap", type=int, default=500)
     parser.add_argument("--max-chunks-per-pdf", type=int, default=None)

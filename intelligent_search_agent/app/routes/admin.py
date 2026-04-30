@@ -117,7 +117,9 @@ async def corpus_status():
     vlm_cache = PROJECT_ROOT / "storage" / "manifests" / "image_vlm_entries.jsonl"
     vlm_cache_lines = 0
     if vlm_cache.exists():
-        vlm_cache_lines = sum(1 for line in vlm_cache.read_text(encoding="utf-8").splitlines() if line.strip())
+        vlm_cache_lines = sum(
+            1 for line in vlm_cache.read_text(encoding="utf-8").splitlines() if line.strip()
+        )
 
     return {
         "counts": counts,
@@ -175,4 +177,7 @@ async def chat_sessions(limit: int = Query(default=25, ge=1, le=100)):
 @router.get("/chat/sessions/{session_id}/messages")
 async def chat_session_messages(session_id: str, limit: int = Query(default=50, ge=1, le=200)):
     db = Database()
-    return {"session_id": session_id, "messages": await db.chat.recent_messages(session_id, limit=limit)}
+    return {
+        "session_id": session_id,
+        "messages": await db.chat.recent_messages(session_id, limit=limit),
+    }

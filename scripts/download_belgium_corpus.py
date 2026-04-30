@@ -86,7 +86,9 @@ def download_binary(client: httpx.Client, url: str, path: Path) -> tuple[bool, i
             response = client.get(url, follow_redirects=True)
             if response.status_code == 429:
                 retry_after = response.headers.get("retry-after")
-                wait_seconds = int(retry_after) if retry_after and retry_after.isdigit() else 20 + attempt * 10
+                wait_seconds = (
+                    int(retry_after) if retry_after and retry_after.isdigit() else 20 + attempt * 10
+                )
                 print(f"rate limited; waiting {wait_seconds}s")
                 time.sleep(wait_seconds)
                 continue
@@ -223,7 +225,11 @@ def download_jbh_pdfs(client: httpx.Client, target_count: int) -> list[dict[str,
 
     page = 0
     while len(manifest) < target_count and page < 25:
-        url = JBH_ARTICLES if page == 0 else f"{JBH_ARTICLES}?field_tags_tid_selective=All&&page={page}"
+        url = (
+            JBH_ARTICLES
+            if page == 0
+            else f"{JBH_ARTICLES}?field_tags_tid_selective=All&&page={page}"
+        )
         response = client.get(url)
         response.raise_for_status()
 
@@ -275,11 +281,15 @@ def main() -> None:
     existing_image_manifest = MANIFEST_DIR / "belgium_images_commons.json"
     existing_pdf_manifest = MANIFEST_DIR / "belgian_history_pdfs_jbh.json"
 
-    with httpx.Client(timeout=45.0, headers={"User-Agent": USER_AGENT, "Accept": "application/json,*/*"}) as client:
+    with httpx.Client(
+        timeout=45.0, headers={"User-Agent": USER_AGENT, "Accept": "application/json,*/*"}
+    ) as client:
         if args.images > 0:
             images = download_commons_images(client, args.images)
         elif existing_image_manifest.exists():
-            images = json.loads(existing_image_manifest.read_text(encoding="utf-8")).get("items", [])
+            images = json.loads(existing_image_manifest.read_text(encoding="utf-8")).get(
+                "items", []
+            )
         else:
             images = []
 

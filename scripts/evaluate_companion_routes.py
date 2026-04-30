@@ -90,7 +90,15 @@ def main() -> int:
         answer_ok = not answer_terms or any(
             term.lower() in result["answer"].lower() for term in answer_terms
         )
-        ok = mode_ok and assets_ok and docs_ok and kind_ok and memory_ok and document_open_ok and answer_ok
+        ok = (
+            mode_ok
+            and assets_ok
+            and docs_ok
+            and kind_ok
+            and memory_ok
+            and document_open_ok
+            and answer_ok
+        )
         failures += 0 if ok else 1
         status = "PASS" if ok else "FAIL"
         print(

@@ -26,8 +26,9 @@ def resolve_path(raw_path: str | None) -> Path | None:
 
 async def collect_health(limit: int) -> dict[str, Any]:
     db = Database()
-    counts = (await db.execute(
-        """
+    counts = (
+        await db.execute(
+            """
         SELECT
             (SELECT COUNT(*) FROM assets) AS assets,
             (SELECT COUNT(*) FROM assets WHERE embedding IS NULL) AS assets_missing_embeddings,
@@ -35,7 +36,8 @@ async def collect_health(limit: int) -> dict[str, Any]:
             (SELECT COUNT(*) FROM document_chunks) AS document_chunks,
             (SELECT COUNT(*) FROM document_chunks WHERE embedding IS NULL) AS chunks_missing_embeddings
         """
-    ))[0]
+        )
+    )[0]
 
     settings = get_settings()
     asset_rows = await db.execute(
@@ -78,7 +80,9 @@ async def collect_health(limit: int) -> dict[str, Any]:
 def print_summary(payload: dict[str, Any]) -> None:
     counts = payload["counts"]
     print("Corpus health")
-    print(f"  assets: {counts['assets']} ({counts['assets_missing_embeddings']} missing embeddings)")
+    print(
+        f"  assets: {counts['assets']} ({counts['assets_missing_embeddings']} missing embeddings)"
+    )
     print(
         "  documents: "
         f"{counts['documents']} / chunks: {counts['document_chunks']} "
@@ -90,7 +94,9 @@ def print_summary(payload: dict[str, Any]) -> None:
 
 async def async_main() -> int:
     parser = argparse.ArgumentParser(description="Inspect local corpus ingestion health.")
-    parser.add_argument("--limit", type=int, default=1000, help="Rows to inspect for local file checks.")
+    parser.add_argument(
+        "--limit", type=int, default=1000, help="Rows to inspect for local file checks."
+    )
     parser.add_argument("--db-host", help="Override DB_HOST for this check.")
     parser.add_argument("--db-port", type=int, help="Override DB_PORT for this check.")
     parser.add_argument(

@@ -82,7 +82,9 @@ def test_asset_kind_filter_keeps_explicit_kind() -> None:
 
 
 def test_user_intent_override_forces_mixed_when_images_and_answer_are_requested() -> None:
-    route = AssistantRoute(intent=AssistantIntent.DOCUMENT_ANSWER, search_query="Belgian Revolution")
+    route = AssistantRoute(
+        intent=AssistantIntent.DOCUMENT_ANSWER, search_query="Belgian Revolution"
+    )
 
     normalized = apply_user_intent_overrides(
         route,

@@ -43,7 +43,9 @@ async def ask_stream(
             async for chunk in stream.stream_text(delta=True):
                 if first_token_time is None:
                     first_token_time = time.perf_counter()
-                    logger.info("Time to first token: %.1fms", (first_token_time - total_start) * 1000)
+                    logger.info(
+                        "Time to first token: %.1fms", (first_token_time - total_start) * 1000
+                    )
                 yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
 
             try:

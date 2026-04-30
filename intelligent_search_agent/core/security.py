@@ -20,7 +20,9 @@ def source_url_allowed(url: str | None) -> bool:
     return any(host == allowed or host.endswith(f".{allowed}") for allowed in allowed_hosts)
 
 
-def require_admin_api_key(x_admin_key: str | None = Header(default=None, alias="X-Admin-Key")) -> None:
+def require_admin_api_key(
+    x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+) -> None:
     settings = get_settings()
     if not settings.enable_admin_api:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin API is disabled")
