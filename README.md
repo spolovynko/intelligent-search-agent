@@ -1,76 +1,105 @@
 # Intelligent Search Agent
 
-Local, Docker-friendly AI assistant for searching images and PDF knowledge with
-PostgreSQL + pgvector. This project is inspired by the ALDI AI Companion flow,
-but the guideline-analysis pipeline has been removed. The focus is the assistant:
-chat, intent routing, asset search, document retrieval, and source previews.
+Intelligent Search Agent is a local AI assistant for searching image assets and
+PDF knowledge. It provides a browser chat interface, streams assistant answers,
+shows image results in a clickable table, and cites PDF sources when the answer
+comes from documents.
 
-There are no Azure resources in this version. The app runs locally, can be built
-as a Docker image, and uses direct OpenAI API calls for chat, vision metadata,
-and embeddings.
+The project is inspired by an ALDI AI Companion-style workflow, but it does not
+include guideline analysis. This repository is focused on the assistant and
+retrieval layer only.
 
-## What Works Now
+No Azure resources are required. The app runs locally or in Docker and uses
+direct OpenAI API calls for chat, image understanding, and embeddings.
 
-- Browser chat UI at `http://localhost:8000/`
-- Streaming assistant responses through `/v1/chat/companion/stream`
-- Structured request routing with Pydantic AI:
-  - image search
-  - document answer
-  - mixed image + document search
-  - general chat
-- Image result table with clickable preview buttons
-- PDF/document source chips with excerpts and source links
-- Follow-up awareness using recent chat messages
-- Optional LLM reranking after deterministic vector retrieval
-- Chat session persistence in PostgreSQL
-- Read-only admin/corpus health endpoints
-- Docker Compose setup with FastAPI and pgvector PostgreSQL
-- Belgium demo corpus ingestion for local images and Belgian-history PDFs
+## What It Does
 
-## Architecture
+- Runs a FastAPI assistant UI at `http://localhost:8000/`
+- Classifies each user request before searching
+- Searches image assets with pgvector semantic retrieval
+- Searches PDF chunks for document-grounded answers
+- Streams the assistant response into the chat UI
+- Shows image results as a table with clickable preview buttons
+- Shows document sources as source chips with page links
+- Stores chat sessions in PostgreSQL
+- Provides read-only admin and corpus health endpoints
+- Includes ingestion scripts for a Belgium demo corpus
+
+## How It Works
 
 ```text
-Browser UI
+Browser chat UI
   |
   |-- POST /v1/chat/companion/stream
-  |-- GET  /v1/assets/{id}/file
-  |-- GET  /v1/documents/{id}/file
   |
-FastAPI
+FastAPI app
   |
-  |-- Pydantic AI routing
-  |-- OpenAI chat, vision, and embeddings
+  |-- Request router
+  |     |-- image_search
+  |     |-- document_answer
+  |     |-- mixed_search
+  |     |-- general_chat
+  |
   |-- Retrieval services
+  |     |-- assets
+  |     |-- document chunks
   |
 PostgreSQL + pgvector
   |
-  |-- assets
-  |-- documents
-  |-- document_chunks
-  |-- chat_sessions
-  |-- chat_messages
+  |-- metadata
+  |-- embeddings
+  |-- source file pointers
+  |-- chat sessions
 ```
 
-Real images and PDFs are not stored in PostgreSQL. The database stores metadata,
-validated VLM descriptions, extracted text, embeddings, and file pointers. Local
-prototype files live under `storage/assets`, which is intentionally ignored by
-git except for placeholder `.gitkeep` files.
+The database does not store large image or PDF files. It stores metadata,
+embeddings, captions, extracted PDF text, and pointers to files. Local demo
+files live under `storage/assets`, which is intentionally ignored by git.
 
-## Quick Start
+## Request Types
+
+The assistant chooses one route for every user message.
+
+| Route | When It Is Used | UI Behavior |
+| --- | --- | --- |
+| `image_search` | User asks for images, paintings, photos, maps, posters, or other visual assets | Streams a short answer and renders an image table |
+| `document_answer` | User asks a historical or factual question | Searches PDF chunks and writes a sourced answer |
+| `mixed_search` | User asks for both an answer and visual material | Shows document sources plus image results |
+| `general_chat` | User asks something that does not need the corpus | Answers directly without retrieval |
+
+Follow-up messages use recent chat history. For example, after asking for images
+of the Belgian Revolution, the user can say `only paintings` and the assistant
+will keep the original topic.
+
+## Quick Start With Docker
+
+Create a local `.env` file:
 
 ```powershell
 Copy-Item .env.example .env
-# edit .env and set OPENAI_API_KEY
+```
+
+Edit `.env` and set:
+
+```text
+OPENAI_API_KEY=your_key_here
+```
+
+Start the app and database:
+
+```powershell
 .\scripts\start_local.ps1 -Build
 ```
 
 Open:
 
-- `http://localhost:8000/` for the assistant UI
-- `http://localhost:8000/health` for runtime health
-- `http://localhost:8000/docs` for OpenAPI docs
+- Assistant UI: `http://localhost:8000/`
+- Health check: `http://localhost:8000/health`
+- API docs: `http://localhost:8000/docs`
 
-The Docker database is exposed for pgAdmin on:
+## PostgreSQL / pgAdmin
+
+The Docker database is exposed on host port `5433`.
 
 ```text
 Host: 127.0.0.1
@@ -80,7 +109,12 @@ User: postgres
 Password: postgres
 ```
 
+The database image includes pgvector through `pgvector/pgvector:pg17`.
+
 ## Manual Local Run
+
+Use this when you want the API running directly on your machine while the
+database still runs in Docker.
 
 ```powershell
 python -m venv .venv
@@ -92,101 +126,51 @@ docker compose up -d db
 uvicorn intelligent_search_agent.app.main:app --reload --port 8000
 ```
 
-When running the API outside Docker against the Docker database, set `DB_PORT`
-in `.env` to `5433`.
+When the API runs outside Docker, set this in `.env`:
 
-## Docker
-
-```powershell
-Copy-Item .env.example .env
-# edit .env and set OPENAI_API_KEY
-docker compose --env-file .env up --build
+```text
+DB_HOST=localhost
+DB_PORT=5433
 ```
 
-Build only:
+## Ingest The Belgium Demo Corpus
 
-```powershell
-docker build -t intelligent-search-agent-api:local .
-```
+The repository includes scripts for downloading and ingesting Belgian-history
+images and PDFs. Downloaded files and generated manifests stay local under
+`storage/` and are not committed.
 
-## Main API
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/health` | Runtime health |
-| `POST` | `/v1/chat/stream` | Basic streaming assistant |
-| `POST` | `/v1/chat/companion/stream` | Assistant stream with routing, retrieval, citations, and image-table mode |
-| `POST` | `/v1/chat` | Non-streaming assistant wrapper |
-| `GET` | `/v1/search` | Unified search across indexed sources |
-| `GET` | `/v1/assets/search` | Direct asset search |
-| `GET` | `/v1/assets/{id}` | Asset metadata |
-| `GET` | `/v1/assets/{id}/link` | Stored asset pointers |
-| `GET` | `/v1/assets/{id}/file` | Serve or redirect to the asset |
-| `GET` | `/v1/documents/search` | Direct document chunk search |
-| `GET` | `/v1/documents/{id}` | Document metadata |
-| `GET` | `/v1/documents/{id}/chunks` | Document chunks |
-| `GET` | `/v1/documents/{id}/file` | Serve or redirect to the source PDF |
-| `GET` | `/v1/admin/corpus/status` | Corpus counts, missing embeddings/files, duplicate groups |
-| `GET` | `/v1/admin/chat/sessions` | Recent persisted chat sessions |
-
-## Companion Behavior
-
-The assistant classifies every user request before retrieval.
-
-| Intent | Behavior |
-| --- | --- |
-| `image_search` | Search `assets`, stream a short answer, and render an image table with Show buttons |
-| `document_answer` | Search PDF chunks and stream a prose answer with source chips |
-| `mixed_search` | Search both assets and PDF chunks, then show prose, sources, and image results |
-| `general_chat` | Answer directly without corpus retrieval |
-
-The browser sends recent chat turns with each request, so follow-ups like
-`only paintings` or `show the PDFs too` can reuse prior context.
-
-## Ingest Belgium Corpus
-
-After downloading images and PDFs into the expected local storage folders:
+Run ingestion:
 
 ```powershell
 docker compose up -d db
 python scripts\ingest_belgium_corpus.py --apply-schema
 ```
 
-Useful safer runs:
+Useful safer commands:
 
 ```powershell
-# validate files and PDF chunking without OpenAI calls or DB writes
+# inspect files and PDF chunking without OpenAI calls or DB writes
 python scripts\ingest_belgium_corpus.py --dry-run
 
 # ingest a small sample first
 python scripts\ingest_belgium_corpus.py --apply-schema --image-limit 5 --pdf-limit 2
 
-# only process PDFs
+# process only PDFs
 python scripts\ingest_belgium_corpus.py --skip-images
 
-# force-refresh existing rows and regenerate VLM entries
+# refresh existing rows and regenerate VLM image descriptions
 python scripts\ingest_belgium_corpus.py --force --refresh-vlm
 ```
 
-The script:
+The ingestion pipeline:
 
-- analyzes images with `VISION_MODEL`
-- validates VLM output with Pydantic models
-- extracts and chunks PDF text
-- OCRs textless PDF pages in `--pdf-ocr auto` mode
-- embeds asset and document text
-- upserts rows into PostgreSQL
-
-Generated VLM caches, downloaded images, downloaded PDFs, and corpus manifests
-stay local under `storage/` and are ignored by git.
-
-## Checks
-
-```powershell
-python -m pytest
-python scripts\evaluate_companion_routes.py
-python scripts\corpus_health.py --docker-db
-```
+- describes each image with a vision model
+- validates image metadata with Pydantic models
+- extracts PDF text with PyMuPDF
+- optionally OCRs textless PDF pages
+- chunks PDF text by page
+- embeds image and document search text
+- upserts records into PostgreSQL
 
 Expected populated demo corpus:
 
@@ -199,16 +183,73 @@ missing local files: 0
 duplicate content hash groups: 0
 ```
 
+## Main API Routes
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Runtime health |
+| `POST` | `/v1/chat/companion/stream` | Main streaming assistant endpoint |
+| `POST` | `/v1/chat/stream` | Basic streaming chat endpoint |
+| `POST` | `/v1/chat` | Non-streaming chat wrapper |
+| `GET` | `/v1/search` | Unified search |
+| `GET` | `/v1/assets/search` | Search assets directly |
+| `GET` | `/v1/assets/{id}` | Asset metadata |
+| `GET` | `/v1/assets/{id}/file` | Serve or redirect to an asset file |
+| `GET` | `/v1/documents/search` | Search document chunks directly |
+| `GET` | `/v1/documents/{id}` | Document metadata |
+| `GET` | `/v1/documents/{id}/chunks` | Document chunks |
+| `GET` | `/v1/documents/{id}/file` | Serve or redirect to a PDF |
+| `GET` | `/v1/admin/corpus/status` | Corpus counts and health checks |
+| `GET` | `/v1/admin/chat/sessions` | Recent persisted chat sessions |
+
+## Project Structure
+
+```text
+intelligent_search_agent/
+  agent/assistant/       assistant routing, findings, answering, streaming
+  app/routes/            FastAPI route handlers
+  app/static/            browser chat UI
+  core/                  configuration, logging, security helpers
+  db/                    database services, queries, embeddings
+  ingestion/             corpus ingestion and PDF/image processing
+  models/                API response/request models
+  retrieval/             file storage helpers
+
+scripts/                 local utilities and ingestion entrypoints
+sql/schema.sql           database schema and pgvector indexes
+docs/                    architecture, data sources, evaluation prompts
+storage/                 local corpus files, ignored by git
+tests/                   unit tests
+```
+
+## Development Checks
+
+Run these before committing code changes:
+
+```powershell
+python -m ruff check .
+python -m ruff format --check .
+python -m pytest
+python scripts\corpus_health.py --docker-db
+```
+
+Evaluate companion routing against the local running API:
+
+```powershell
+python scripts\evaluate_companion_routes.py
+```
+
 ## Security And Local Data
 
-- `.env` is ignored and must contain the real `OPENAI_API_KEY`.
+- `.env` is ignored and must hold real secrets locally.
 - `.env.example` contains placeholders only.
 - `storage/assets/**` and `storage/manifests/**` are ignored because they hold
-  downloaded source files and generated corpus metadata.
-- Set `ADMIN_API_KEY` before exposing the API beyond local development.
-- `ALLOWED_SOURCE_URL_HOSTS` limits external redirects for asset/document files.
+  downloaded corpus files and generated metadata.
+- Set `ADMIN_API_KEY` before exposing admin routes outside local development.
+- `ALLOWED_SOURCE_URL_HOSTS` controls which external file URLs can be redirected
+  to by asset and document endpoints.
 
-## Project Docs
+## Useful Docs
 
 - `docs/architecture.md`
 - `docs/data-sources.md`
@@ -216,14 +257,35 @@ duplicate content hash groups: 0
 - `docs/evaluation-prompts.md`
 - `docs/evals/companion_routes.jsonl`
 
-## Deliberately Excluded
+## What Is Deliberately Not Included
 
-The old ALDI guideline-compliance workflow is not part of this repo:
+This repository does not include the old guideline-compliance workflow:
 
-- no guideline upload or analysis routes
-- no logo/layout/color compliance checks
-- no Azure services
+- no guideline upload flow
+- no layout, logo, or color compliance checks
 - no guideline report generation
+- no Azure-specific resources
 
-Those can be added later as separate features, but this repo is currently the
-assistant and search core.
+Those features can be added later as separate modules. The current project is
+the assistant and search core.
+
+## Troubleshooting
+
+If pgAdmin cannot connect, make sure the project database is running:
+
+```powershell
+docker compose up -d db
+```
+
+If the assistant UI loads but cannot answer corpus questions, check:
+
+```powershell
+python scripts\corpus_health.py --docker-db
+```
+
+If ingestion fails immediately, confirm `.env` contains `OPENAI_API_KEY` and the
+database container is healthy:
+
+```powershell
+docker compose ps
+```
